@@ -1,5 +1,7 @@
 package org.geektimes.projects.user.service;
 
+import java.sql.SQLException;
+
 import org.geektimes.projects.user.domain.User;
 
 /**
@@ -33,5 +35,7 @@ public interface UserService {
 
     User queryUserById(Long id);
 
-    User queryUserByNameAndPassword(String name, String password);
+    User queryUserByEmailAndPassword(String email, String password);
+    
+    void initDatabase() throws SQLException;
 }

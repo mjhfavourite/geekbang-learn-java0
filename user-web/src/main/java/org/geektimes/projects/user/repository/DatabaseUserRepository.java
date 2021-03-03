@@ -14,6 +14,8 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.ws.rs.container.ConnectionCallback;
+
 import static org.apache.commons.lang.ClassUtils.wrapperToPrimitive;
 
 public class DatabaseUserRepository implements UserRepository {
@@ -25,6 +27,13 @@ public class DatabaseUserRepository implements UserRepository {
      */
     private static Consumer<Throwable> COMMON_EXCEPTION_HANDLER = e -> logger.log(Level.SEVERE, e.getMessage());
 
+	public static final String DROP_USERS_TABLE_DDL_SQL = "DROP TABLE users";
+
+	public static final String CREATE_USERS_TABLE_DDL_SQL = "CREATE TABLE users("
+			+ "id INT NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1), "
+			+ "name VARCHAR(16) NOT NULL, " + "password VARCHAR(64) NOT NULL, " + "email VARCHAR(64) NOT NULL, "
+			+ "phoneNumber VARCHAR(64) NOT NULL" + ")";
+    
     public static final String INSERT_USER_DML_SQL =
             "INSERT INTO users(name,password,email,phoneNumber) VALUES " +
                     "(?,?,?,?)";
@@ -43,7 +52,20 @@ public class DatabaseUserRepository implements UserRepository {
 
     @Override
     public boolean save(User user) {
-        return false;
+    	 Connection connection = getConnection();
+    	 try {
+			PreparedStatement psmtp = connection.prepareStatement(INSERT_USER_DML_SQL);
+			psmtp.setString(1, user.getName());
+			psmtp.setString(2, user.getPassword());
+			psmtp.setString(3, user.getEmail());
+			psmtp.setString(4, user.getPhoneNumber());
+			System.out.println(user.toString());
+			System.out.println(psmtp.executeUpdate());
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+    	 
+        return true;
     }
 
     @Override
@@ -62,12 +84,31 @@ public class DatabaseUserRepository implements UserRepository {
     }
 
     @Override
-    public User getByNameAndPassword(String userName, String password) {
-        return executeQuery("SELECT id,name,password,email,phoneNumber FROM users WHERE name=? and password=?",
+    public User getByEmailAndPassword(String email, String password) {
+        return executeQuery("SELECT id,name,password,email,phoneNumber FROM users WHERE email=? and password=?",
                 resultSet -> {
-                    // TODO
-                    return new User();
-                }, COMMON_EXCEPTION_HANDLER, userName, password);
+                	User user = new User();
+                    BeanInfo userBeanInfo = Introspector.getBeanInfo(User.class, Object.class);
+                    while (resultSet.next()) { // 如果存在并且游标滚动 // SQLException
+                        for (PropertyDescriptor propertyDescriptor : userBeanInfo.getPropertyDescriptors()) {
+                            String fieldName = propertyDescriptor.getName();
+                            Class fieldType = propertyDescriptor.getPropertyType();
+                            String methodName = resultSetMethodMappings.get(fieldType);
+                            // 可能存在映射关系（不过此处是相等的）
+                            String columnLabel = mapColumnLabel(fieldName);
+                            Method resultSetMethod = ResultSet.class.getMethod(methodName, String.class);
+                            // 通过放射调用 getXXX(String) 方法
+                            Object resultValue = resultSetMethod.invoke(resultSet, columnLabel);
+                            // 获取 User 类 Setter方法
+                            // PropertyDescriptor ReadMethod 等于 Getter 方法
+                            // PropertyDescriptor WriteMethod 等于 Setter 方法
+                            Method setterMethodFromUser = propertyDescriptor.getWriteMethod();
+                            // 以 id 为例，  user.setId(resultSet.getLong("id"));
+                            setterMethodFromUser.invoke(user, resultValue);
+                        }
+                    }
+                    return user;
+                }, COMMON_EXCEPTION_HANDLER, email, password);
     }
 
     @Override
@@ -97,7 +138,7 @@ public class DatabaseUserRepository implements UserRepository {
             }
             return users;
         }, e -> {
-            // 异常处理
+            e.printStackTrace();
         });
     }
 
@@ -121,23 +162,30 @@ public class DatabaseUserRepository implements UserRepository {
                 if (wrapperType == null) {
                     wrapperType = argType;
                 }
-
                 // Boolean -> boolean
                 String methodName = preparedStatementMethodMappings.get(argType);
-                Method method = PreparedStatement.class.getMethod(methodName, wrapperType);
-                method.invoke(preparedStatement, i + 1, args);
+                Method method = PreparedStatement.class.getMethod(methodName, int.class, wrapperType);
+                method.invoke(preparedStatement, i + 1, wrapperType.cast(arg));
             }
             ResultSet resultSet = preparedStatement.executeQuery();
             // 返回一个 POJO List -> ResultSet -> POJO List
             // ResultSet -> T
             return function.apply(resultSet);
         } catch (Throwable e) {
-            exceptionHandler.accept(e);
+            e.printStackTrace();;
         }
         return null;
     }
 
 
+    public void initDatabase() throws SQLException {
+    	Connection connection = getConnection();
+    	Statement statement = connection.createStatement();
+    	statement.execute(DROP_USERS_TABLE_DDL_SQL);
+    	statement.execute(CREATE_USERS_TABLE_DDL_SQL);
+    	statement.close();
+    }
+    
     private static String mapColumnLabel(String fieldName) {
         return fieldName;
     }

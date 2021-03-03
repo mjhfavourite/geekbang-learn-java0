@@ -20,7 +20,7 @@ public interface UserRepository {
 
     User getById(Long userId);
 
-    User getByNameAndPassword(String userName, String password);
+    User getByEmailAndPassword(String userName, String password);
 
     Collection<User> getAll();
 }

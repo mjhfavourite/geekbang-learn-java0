@@ -2,12 +2,17 @@ package org.geektimes.projects.user.web.controller;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.SQLException;
 
+import javax.naming.InitialContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.Path;
 
+import org.geektimes.projects.user.domain.User;
+import org.geektimes.projects.user.service.UserService;
+import org.geektimes.projects.user.service.impl.UserServiceImpl;
 import org.geektimes.web.mvc.controller.RestController;
 
 /**
@@ -21,15 +26,34 @@ import org.geektimes.web.mvc.controller.RestController;
 @Path("/api/user")
 public class UserApiController implements RestController {
 
-	@Path("/login")
+	private UserService userService = new UserServiceImpl();
+
+	@Path("/init")
+	public void InitDataBase(HttpServletRequest request, HttpServletResponse response)
+			throws SQLException, IOException {
+		userService.initDatabase();
+		writeResponse(response, "数据库初始化成功");
+	}
+
+	@Path("/register")
 	public void getJson(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		System.out.println("hthht");
-		HttpSession session = request.getSession();
-		if ("true".equals(String.valueOf(session.getAttribute("auth")))) {
-			writeResponse(response, "allow visite");
+		String email = "test@126.com";
+		String name = "test";
+		String password = "test1";
+		String phoneNumber = "13800138000";
+		User user = new User();
+		user.setEmail(email);
+		user.setName(name);
+		user.setPassword(password);
+		user.setPhoneNumber(phoneNumber);
+
+		boolean flag = userService.register(user);
+		if (flag) {
+			writeResponse(response, "注册成功");
 		} else {
-			writeResponse(response, "no permission");
+			writeResponse(response, "注册失败");
 		}
+
 	}
 
 	@Path("/login")

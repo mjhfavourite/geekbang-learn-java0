@@ -58,10 +58,6 @@
 						<configuration>
 							<!-- ServletContext 路径 -->
 							<path>/</path>
-							<mode>context</mode>
-							<contextFile>src/main/webapp/WEB-INF/context.xml</contextFile>
-							<contextReloadable>true</contextReloadable>
-							<enableNaming>true</enableNaming>
 						</configuration>
 					</execution>
 				</executions>
