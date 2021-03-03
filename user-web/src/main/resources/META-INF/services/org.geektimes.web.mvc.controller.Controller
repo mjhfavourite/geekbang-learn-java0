@@ -1,0 +1,2 @@
+org.geektimes.projects.user.web.controller.UserPageController
+org.geektimes.projects.user.web.controller.UserApiController

@@ -1,0 +1,4 @@
+.project
+.extract/*
+.settings/*
+derby.log
