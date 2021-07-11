@@ -4,15 +4,15 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.geekbang.projects</groupId>
-	<artifactId>user-platform</artifactId>
-	<name>User Platform ${revision}</name>
+	<groupId>org.shishuiliu.projects</groupId>
+	<artifactId>learn-platform</artifactId>
+	<name>learn Platform ${revision}</name>
 	<version>${revision}</version>
 	<packaging>pom</packaging>
 
 	<modules>
-		<module>my-web-mvc</module>
-		<module>user-web</module>
+		<module>learn-web-mvc</module>
+		<module>learn-web</module>
 	</modules>
 
 	<properties>
@@ -132,7 +132,7 @@
 						</execution>
 					</executions>
 				</plugin>
-				
+
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>flatten-maven-plugin</artifactId>
